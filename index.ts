@@ -1,34 +1,43 @@
 /**
  * claude-code — pi extension
  *
- * Registers a `claude-code` provider that makes pi behave as the official Claude
- * Code CLI, so requests authenticated with a Claude Pro/Max OAuth token are billed
- * against the subscription plan instead of metered "extra usage".
+ * Makes pi behave as the official Claude Code CLI so that Anthropic requests
+ * authenticated with a Claude Pro/Max OAuth token are billed against the
+ * subscription plan instead of metered "extra usage".
  *
- * Credentials are imported from the Claude Code CLI session
- * (`~/.claude/.credentials.json`) and refreshed via the CLI; a browser OAuth flow
- * is used as a fallback. See README.md for details.
+ * Rather than adding a separate provider (which leaves pi's built-in `anthropic`
+ * provider selectable and billing extra usage when you switch models), this
+ * overrides the built-in `anthropic` provider in place:
+ *
+ *   - Streaming for the `anthropic-messages` API is replaced with a Claude Code
+ *     impersonating implementation. Pi resolves streaming globally by API type,
+ *     so this covers every Anthropic model — switching models stays on-plan.
+ *   - `/login` for `anthropic` imports/refreshes credentials from the Claude Code
+ *     CLI session (with a browser OAuth fallback).
+ *
+ * No model list is passed, so pi's full, auto-updated Anthropic catalog is
+ * preserved. API-key users are unaffected: impersonation only activates for
+ * Claude Code OAuth tokens.
+ *
+ * See README.md for details.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { ANTHROPIC_BASE_URL } from "./src/constants.ts";
 import { login, refreshCredentials } from "./src/credentials.ts";
-import { CLAUDE_CODE_MODELS } from "./src/models.ts";
 import { streamClaudeCode } from "./src/stream.ts";
 
 export default function (pi: ExtensionAPI) {
-	pi.registerProvider("claude-code", {
-		name: "Claude Code (subscription)",
-		baseUrl: ANTHROPIC_BASE_URL,
-		apiKey: "$ANTHROPIC_API_KEY",
-		api: "claude-code-api",
-		models: CLAUDE_CODE_MODELS,
+	pi.registerProvider("anthropic", {
+		// Bind the stealth stream to the Anthropic Messages API. Pi keys streaming
+		// on the API type, so this overrides every `anthropic-messages` model.
+		api: "anthropic-messages",
+		streamSimple: streamClaudeCode,
+		// Use the Claude Code CLI session for /login and token refresh.
 		oauth: {
 			name: "Claude Code (Pro/Max via CLI session)",
 			login,
 			refreshToken: refreshCredentials,
 			getApiKey: (credentials) => credentials.access,
 		},
-		streamSimple: streamClaudeCode,
 	});
 }

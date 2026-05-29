@@ -1,6 +1,6 @@
 {
   "name": "pi-extension-claude-code",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Use pi as Claude Code, billed against your Claude Pro/Max subscription instead of metered extra usage.",
   "license": "MIT",
   "type": "module",

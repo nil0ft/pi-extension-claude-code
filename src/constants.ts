@@ -22,9 +22,6 @@ export const TOKEN_URL = "https://platform.claude.com/v1/oauth/token";
 export const REDIRECT_URI = "https://platform.claude.com/oauth/code/callback";
 export const OAUTH_SCOPES = "user:profile user:inference user:sessions:claude_code user:mcp_servers";
 
-/** Anthropic Messages API base URL. */
-export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
-
 /** Credentials file written by the official Claude Code CLI. */
 export const CLAUDE_CREDENTIALS_PATH = join(homedir(), ".claude", ".credentials.json");
 

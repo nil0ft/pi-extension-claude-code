@@ -9,11 +9,19 @@ Claude Code CLI, the same approach used by the `nil0ft/crush` fork.
 
 ## How it works
 
-Registers a `claude-code` provider that:
+It **overrides pi's built-in `anthropic` provider** in place rather than adding a
+separate provider. Pi resolves streaming globally by API type, so binding the
+Claude Code stealth stream to the `anthropic-messages` API covers **every**
+Anthropic model — switching models (`/model`, `Ctrl+P`) stays on-plan instead of
+falling back to metered billing. Pi's full, auto-updated Anthropic catalog is
+preserved (no hand-maintained model list).
+
+For each request it:
 
 - **Imports credentials from the Claude Code CLI** session
   (`~/.claude/.credentials.json`) and refreshes them via the `claude` binary or the
   OAuth refresh endpoint — so pi shares the official CLI's plan-backed session.
+  `/login` for `anthropic` uses this; a browser OAuth flow is the fallback.
 - **Impersonates the CLI** on the wire: Claude Code identity, the
   `claude-code-20250219` / `oauth-2025-04-20` betas, a `claude-cli/<version>`
   User-Agent (matched to your installed CLI), `x-app: cli`, and Claude Code tool
@@ -23,18 +31,20 @@ Registers a `claude-code` provider that:
   That one section is removed; all coding guidelines, tool rules, project context
   (AGENTS.md / CLAUDE.md), skills, and date/cwd are preserved.
 
+API-key users are unaffected: impersonation only activates for Claude Code OAuth
+tokens (`sk-ant-oat…`).
+
 ## Layout
 
 ```
 pi-extension-claude-code/
-├── index.ts            # entry point: registerProvider wiring
+├── index.ts            # entry point: overrides the built-in anthropic provider
 ├── src/
 │   ├── constants.ts    # client id, endpoints, betas, identity, tools, User-Agent
 │   ├── credentials.ts  # disk import, refresh chain, browser PKCE fallback
 │   ├── prompt.ts       # system-prompt sanitizer + block construction
 │   ├── convert.ts      # message/tool conversion + Claude Code name mapping
-│   ├── stream.ts       # Anthropic streaming -> pi event stream
-│   └── models.ts       # model catalog
+│   └── stream.ts       # Anthropic streaming -> pi event stream
 ├── package.json
 └── tsconfig.json
 ```
@@ -61,25 +71,24 @@ Try it for a single run without installing:
 pi -e git:github.com/nil0ft/pi-extension-claude-code
 ```
 
-Then authenticate and select a model:
+Then authenticate — the provider is the regular `anthropic` one, now plan-billed:
 
 ```
 pi
 /login          # choose "Claude Code (Pro/Max via CLI session)"
-/model          # pick claude-code/claude-sonnet-4-5
+/model          # pick any anthropic/<model>, e.g. anthropic/claude-sonnet-4-5
 ```
 
-To make it the default, set in `~/.pi/agent/settings.json`:
+Use any Anthropic model as usual (e.g. `anthropic/claude-opus-4-8`,
+`anthropic/claude-sonnet-4-5`); they all route through the subscription. Set a
+default in `~/.pi/agent/settings.json` if you like:
 
 ```json
 {
-  "defaultProvider": "claude-code",
+  "defaultProvider": "anthropic",
   "defaultModel": "claude-sonnet-4-5"
 }
 ```
-
-Models: `claude-code/claude-opus-4-5`, `claude-code/claude-sonnet-4-5`,
-`claude-code/claude-haiku-4-5`.
 
 ## Requirements
 
