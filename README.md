@@ -88,7 +88,7 @@ pi install git:github.com/nil0ft/pi-extension-claude-code
 # or from npm, if published:
 pi install npm:pi-extension-claude-code
 # or pin a tag / commit:
-pi install git:github.com/nil0ft/pi-extension-claude-code@v0.2.0
+pi install git:github.com/nil0ft/pi-extension-claude-code@v0.5.0
 ```
 
 To share with a team, add it to project settings with `-l` (writes
