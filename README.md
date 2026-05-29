@@ -39,23 +39,6 @@ on-plan. Run `/claude-code` anytime to see your live billing status.
 > logged in (so `~/.claude/.credentials.json` exists). No CLI? `/login` falls back
 > to a browser OAuth flow.
 
-## How it works
-
-It **overrides pi's built-in `anthropic` provider** in place instead of adding a
-separate one. Pi resolves streaming globally by API type, so binding the Claude
-Code stream to `anthropic-messages` covers **every** Anthropic model — pi's full,
-auto-updated catalog is preserved with zero hand-maintained model lists.
-
-| | |
-|---|---|
-| 🔑 **Shared session** | Reads & refreshes the official CLI's OAuth token from `~/.claude/.credentials.json` (browser PKCE fallback). |
-| 🥷 **Faithful impersonation** | Claude Code identity, required betas, a `claude-cli/<version>` User-Agent matched to your install, and Claude Code tool names. |
-| 🧹 **Prompt sanitizing** | Strips only the self-referential snippet that trips Anthropic's harness classifier; all coding guidelines, tools, project context (`AGENTS.md`/`CLAUDE.md`) and skills are kept. |
-| 📊 **Billing monitor** | Reads `anthropic-ratelimit-unified-*` headers on real responses to report the true billing pool. |
-
-API-key users are untouched — impersonation activates only for Claude Code OAuth
-tokens (`sk-ant-oat…`).
-
 ## Disclaimer
 
 Unofficial; not affiliated with Anthropic. Use within your plan's terms of
