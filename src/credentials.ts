@@ -6,8 +6,6 @@
  * CLI itself, so usage is billed against the Claude Pro/Max plan rather than
  * metered "extra usage". A standard browser PKCE flow remains as a fallback for
  * machines without the CLI installed.
- *
- * Ported from the crush fork (internal/oauth/claude/oauth.go).
  */
 
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
