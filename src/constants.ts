@@ -25,6 +25,15 @@ export const OAUTH_SCOPES = "user:profile user:inference user:sessions:claude_co
 /** Credentials file written by the official Claude Code CLI. */
 export const CLAUDE_CREDENTIALS_PATH = join(homedir(), ".claude", ".credentials.json");
 
+/** pi's global agent directory (settings, auth, caches). */
+export const PI_AGENT_DIR = join(homedir(), ".pi", "agent");
+
+/** Anthropic Messages API endpoint (used by the startup self-check probe). */
+export const ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
+
+/** Anthropic API version header value. */
+export const ANTHROPIC_VERSION = "2023-06-01";
+
 /** Beta flags required for the Claude Code OAuth surface. */
 export const CLAUDE_CODE_BETAS = ["claude-code-20250219", "oauth-2025-04-20"] as const;
 

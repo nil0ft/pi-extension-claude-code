@@ -34,17 +34,37 @@ For each request it:
 API-key users are unaffected: impersonation only activates for Claude Code OAuth
 tokens (`sk-ant-oat…`).
 
+## Billing warning & self-check
+
+Once active, this extension makes subscription auth bill against your plan, so
+pi's built-in *"subscription auth … draws from extra usage"* warning becomes
+misleading. The extension therefore:
+
+- **Disables that warning** by setting `warnings.anthropicExtraUsage: false` in
+  `~/.pi/agent/settings.json` (written once, and skipped if you have set the flag
+  yourself).
+- **Replaces it with an accurate self-check.** On startup it sends a tiny probe
+  through the same impersonation path and confirms Anthropic is billing on-plan.
+  If Anthropic ever changes detection server-side and requests fall back to extra
+  usage (or auth fails), you get an explicit error notification instead of silent
+  paid usage. Successful checks are cached and throttled (~12h) to keep startup
+  fast; failures are always re-checked.
+
+Run `/claude-code` any time to re-check on demand.
+
 ## Layout
 
 ```
 pi-extension-claude-code/
-├── index.ts            # entry point: overrides the built-in anthropic provider
+├── index.ts            # entry point: provider override, warning suppress, self-check, command
 ├── src/
 │   ├── constants.ts    # client id, endpoints, betas, identity, tools, User-Agent
 │   ├── credentials.ts  # disk import, refresh chain, browser PKCE fallback
 │   ├── prompt.ts       # system-prompt sanitizer + block construction
 │   ├── convert.ts      # message/tool conversion + Claude Code name mapping
-│   └── stream.ts       # Anthropic streaming -> pi event stream
+│   ├── stream.ts       # Anthropic streaming -> pi event stream
+│   ├── selfcheck.ts    # throttled subscription-billing probe + status
+│   └── settings.ts     # safe, idempotent disable of pi's extra-usage warning
 ├── package.json
 └── tsconfig.json
 ```
