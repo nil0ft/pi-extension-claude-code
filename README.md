@@ -135,3 +135,22 @@ npm run typecheck  # tsc --noEmit
 `@earendil-works/pi-ai` and `@earendil-works/pi-coding-agent` are declared as
 `peerDependencies` (`"*"`) — pi provides them at runtime, so they are not bundled.
 They are also in `devDependencies` purely so a fresh clone can typecheck.
+
+## Releasing
+
+Releases are automated by GitHub Actions. Pushing a `vX.Y.Z` tag runs a
+typecheck, publishes to npm (with build provenance), and creates a GitHub
+release:
+
+```bash
+npm version patch        # or minor / major — bumps package.json and creates a tag
+git push --follow-tags
+```
+
+One-time setup: add an npm **Automation** access token as the `NPM_TOKEN`
+repository secret (Settings → Secrets and variables → Actions). Until then you
+can publish manually with `npm publish`.
+
+The published tarball ships only the runtime files (`index.ts`, `src/`, README,
+LICENSE) — pi executes the TypeScript directly, so there is no build step.
+

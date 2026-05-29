@@ -3,6 +3,7 @@
   "version": "0.5.0",
   "description": "Use pi as Claude Code, billed against your Claude Pro/Max subscription instead of metered extra usage.",
   "license": "MIT",
+  "author": "nil0ft",
   "type": "module",
   "keywords": [
     "pi-package",
@@ -13,17 +14,31 @@
     "oauth",
     "subscription"
   ],
+  "homepage": "https://github.com/nil0ft/pi-extension-claude-code#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nil0ft/pi-extension-claude-code.git"
   },
+  "bugs": {
+    "url": "https://github.com/nil0ft/pi-extension-claude-code/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "pi": {
     "extensions": [
       "./index.ts"
     ]
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.52.0"
