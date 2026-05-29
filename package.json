@@ -1,0 +1,41 @@
+{
+  "name": "pi-extension-claude-code",
+  "version": "0.2.0",
+  "description": "Use pi as Claude Code, billed against your Claude Pro/Max subscription instead of metered extra usage.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "claude",
+    "claude-code",
+    "anthropic",
+    "oauth",
+    "subscription"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nil0ft/pi-extension-claude-code.git"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.52.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}
