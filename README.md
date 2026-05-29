@@ -34,7 +34,7 @@ For each request it:
 API-key users are unaffected: impersonation only activates for Claude Code OAuth
 tokens (`sk-ant-oat…`).
 
-## Billing warning & self-check
+## Billing warning & monitor
 
 Once active, this extension makes subscription auth bill against your plan, so
 pi's built-in *"subscription auth … draws from extra usage"* warning becomes
@@ -43,27 +43,36 @@ misleading. The extension therefore:
 - **Disables that warning** by setting `warnings.anthropicExtraUsage: false` in
   `~/.pi/agent/settings.json` (written once, and skipped if you have set the flag
   yourself).
-- **Replaces it with an accurate self-check.** On startup it sends a tiny probe
-  through the same impersonation path and confirms Anthropic is billing on-plan.
-  If Anthropic ever changes detection server-side and requests fall back to extra
-  usage (or auth fails), you get an explicit error notification instead of silent
-  paid usage. Successful checks are cached and throttled (~12h) to keep startup
-  fast; failures are always re-checked.
+- **Replaces it with an accurate, header-based monitor.** It inspects the
+  `anthropic-ratelimit-unified-*` headers on every real response to tell which
+  pool a request was billed to:
+  - Requests billed to the plan carry per-window status headers
+    (`unified-5h-status` / `unified-7d-status`). Within limits → silent.
+  - If a response lacks those plan-window headers, the request was routed to
+    **extra usage** → you get an error notification (impersonation may have
+    stopped working; check for an update).
+  - If a plan window reports `rejected`, your **plan limit is reached** → you're
+    told to enable extra usage to continue (billed per token) or wait for reset.
 
-Run `/claude-code` any time to re-check on demand.
+This never depends on a `400 "out of extra usage"` error — that error is ambiguous
+(it can mean either "impersonation failed" or "plan limit reached", and only fires
+for accounts with extra usage disabled), so the headers are used to tell the two
+apart. Notifications fire only when the billing state changes.
+
+Run `/claude-code` any time to see the current billing status.
 
 ## Layout
 
 ```
 pi-extension-claude-code/
-├── index.ts            # entry point: provider override, warning suppress, self-check, command
+├── index.ts            # entry point: provider override, warning suppress, billing wiring, command
 ├── src/
 │   ├── constants.ts    # client id, endpoints, betas, identity, tools, User-Agent
 │   ├── credentials.ts  # disk import, refresh chain, browser PKCE fallback
 │   ├── prompt.ts       # system-prompt sanitizer + block construction
 │   ├── convert.ts      # message/tool conversion + Claude Code name mapping
-│   ├── stream.ts       # Anthropic streaming -> pi event stream
-│   ├── selfcheck.ts    # throttled subscription-billing probe + status
+│   ├── stream.ts       # Anthropic streaming -> pi event stream (+ header capture)
+│   ├── billing.ts      # classify plan vs extra-usage from response headers
 │   └── settings.ts     # safe, idempotent disable of pi's extra-usage warning
 ├── package.json
 └── tsconfig.json

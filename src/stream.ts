@@ -20,6 +20,7 @@ import {
 	type ThinkingContent,
 	type ToolCall,
 } from "@earendil-works/pi-ai";
+import { recordResponseHeaders } from "./billing.ts";
 import {
 	CLAUDE_CODE_BETAS,
 	COMMON_BETAS,
@@ -95,6 +96,18 @@ export function streamClaudeCode(
 			const clientOptions: ConstructorParameters<typeof Anthropic>[0] = {
 				baseURL: model.baseUrl,
 				dangerouslyAllowBrowser: true,
+				// Observe response headers to track whether requests bill to the plan
+				// or fall through to extra usage. Reading headers does not consume the
+				// streaming body, and failures here never affect the request.
+				fetch: async (url, init) => {
+					const response = await fetch(url, init);
+					try {
+						recordResponseHeaders(response.headers);
+					} catch {
+						/* monitoring is best-effort */
+					}
+					return response;
+				},
 				defaultHeaders: {
 					accept: "application/json",
 					"anthropic-dangerous-direct-browser-access": "true",

@@ -15,32 +15,18 @@
  *   - `/login` for `anthropic` imports/refreshes credentials from the Claude Code
  *     CLI session (with a browser OAuth fallback).
  *
- * It also disables pi's now-misleading built-in extra-usage warning and replaces
- * it with an accurate startup self-check that warns only if billing actually
- * falls back to extra usage (e.g. if Anthropic changes detection server-side).
+ * It also disables pi's now-misleading built-in extra-usage warning and instead
+ * watches real response headers to report the true billing pool: it warns only if
+ * requests actually fall through to extra usage, or if your plan limit is reached.
  *
  * See README.md for details.
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { describeBilling, getLastBilling, setBillingNotifier } from "./src/billing.ts";
 import { login, refreshCredentials } from "./src/credentials.ts";
-import { runSelfCheck, type SelfCheckResult } from "./src/selfcheck.ts";
 import { disablePiExtraUsageWarning } from "./src/settings.ts";
 import { streamClaudeCode } from "./src/stream.ts";
-
-/** Maps a self-check result to a user-facing notification, or null if all good. */
-function notifyForResult(ctx: ExtensionContext, result: SelfCheckResult): void {
-	switch (result.status) {
-		case "ok":
-		case "skipped":
-			return;
-		case "auth":
-			ctx.ui.notify(`Claude Code: ${result.message}`, "warning");
-			return;
-		default:
-			ctx.ui.notify(`Claude Code: ${result.message}`, "error");
-	}
-}
 
 export default function (pi: ExtensionAPI) {
 	pi.registerProvider("anthropic", {
@@ -58,34 +44,24 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	// pi's built-in extra-usage warning is misleading once this extension is
-	// active; suppress it and rely on the self-check below instead.
+	// active; suppress it and rely on the header-based monitor instead.
 	disablePiExtraUsageWarning();
 
-	// Verify on startup that billing is actually on-plan. Runs async so it never
-	// blocks the session, and is throttled internally to stay fast/cheap.
+	// Route billing-state transitions (extra-usage detected, plan limit reached)
+	// to the UI. The notifier is wired once a session with UI is available.
 	pi.on("session_start", (_event, ctx) => {
-		void runSelfCheck(false, ctx.signal)
-			.then((result) => notifyForResult(ctx, result))
-			.catch(() => {
-				/* never let the self-check break a session */
-			});
+		setBillingNotifier(
+			ctx.hasUI ? (message, type) => ctx.ui.notify(message, type) : undefined,
+		);
 	});
 
-	// On-demand status / re-check.
+	// On-demand status, based on the most recent real response (no synthetic probe).
 	pi.registerCommand("claude-code", {
-		description: "Check whether Claude Code subscription billing is active",
+		description: "Show Claude Code subscription billing status",
 		handler: async (_args, ctx) => {
-			ctx.ui.setStatus("claude-code", "Checking subscription billing…");
-			try {
-				const result = await runSelfCheck(true, ctx.signal);
-				if (result.status === "ok") {
-					ctx.ui.notify(`Claude Code: ${result.message}`, "info");
-				} else {
-					notifyForResult(ctx, result);
-				}
-			} finally {
-				ctx.ui.setStatus("claude-code", undefined);
-			}
+			const snapshot = getLastBilling();
+			const type = snapshot?.pool === "extra-usage" ? "error" : "info";
+			ctx.ui.notify(`Claude Code: ${describeBilling(snapshot)}`, type);
 		},
 	});
 }
